@@ -124,15 +124,22 @@ module HList
 
   infixr 2 _,_
 
-  applyN : ∀ { n } { xs : vec n Set } { r } → nary xs r → hlist xs → r
+  applyN :
+    ∀ { n } { xs : vec n Set } { r } →
+      nary xs r → hlist xs → r
   applyN {zero}   {[]}     v _        = v
   applyN {succ n} {x ∷ xs} f (v , vs) = applyN (f v) vs
 
+  sequenceA :
+    ∀ { n } { xs : vec n Set } { f : Set → Set } ⦃ _ : applicative f ⦄ →
+      hlist (f <$> xs) → f (hlist xs)
+  sequenceA { zero }   {[]}      ∎       = pure ∎
+  sequenceA { succ n } {t ∷ ts} (x , xs) = (_,_) <$> x <*> sequenceA xs
+
   liftN :
     ∀ { n : nat } { xs : vec n Set } { r : Set } { f : Set → Set } ⦃ _ : applicative f ⦄ →
-    nary xs r → hlist (f <$> xs) → f r
-  liftN {zero}   {[]}     r _        = pure r
-  liftN {succ n} {x ∷ xs} f (v , vs) = ?
+      nary xs r → hlist (f <$> xs) → f r
+  liftN f xs = applyN f <$> sequenceA xs
 
 open HList
 
@@ -166,6 +173,6 @@ module FreeApplicative
     v2 = false ∷ true ∷ true ∷ []
 
   interpret : ∀ { f : Set → Set } { a : Set } ⦃ _ : applicative f ⦄ → free f a → f a
-  interpret (mkFree {n} {xs} f vs) = liftN {n = n} {xs = xs} f vs
+  interpret (mkFree {n} {xs} f vs) = liftN f vs
 
 open Applicative
