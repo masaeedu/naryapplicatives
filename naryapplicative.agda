@@ -86,9 +86,6 @@ module Vec
           }
       }
 
-    -- vf { n = zero } = record { _<$>_ = λ { _ [] → [] } }
-    -- vf { n = succ n′ } = record { _<$>_ = λ { f (x ∷ xs) → f x ∷ (f <$> xs) } }
-
     va : ∀ { ℓ } { n } → applicative { ℓ } (vec n)
     va { n = n } = record
       { pure = replicate n
@@ -97,9 +94,6 @@ module Vec
           ; (f ∷ fs) (x ∷ xs) → f x ∷ (fs <*> xs)
           }
       }
-
-    -- va { ℓ } { n = zero } = record { pure = λ _ → []; _<*>_ = λ { [] [] → [] } }
-    -- va { ℓ } { n = succ n′ } = record { pure = λ a → a ∷ replicate n′ a; _<*>_ = λ { (f ∷ fs) (x ∷ xs) → f x ∷ (fs <*> xs) } }
 
 open Vec
 
@@ -136,7 +130,7 @@ module HList
 
   liftN :
     ∀ { n : nat } { xs : vec n Set } { r : Set } { f : Set → Set } ⦃ _ : applicative f ⦄ →
-    nary xs r → hlist (replicate n f <*> xs) → f r
+    nary xs r → hlist (f <$> xs) → f r
   liftN {zero}   {[]}     r _        = pure r
   liftN {succ n} {x ∷ xs} f (v , vs) = ?
 
@@ -153,9 +147,9 @@ module FreeApplicative
 
   data free (f : Set → Set) (a : Set) : Set₁
     where
-    mkFree : ∀ { n } { xs : vec n Set } → nary xs a → hlist (replicate n f <*> xs) → free f a
+    mkFree : ∀ { n } { xs : vec n Set } → nary xs a → hlist (f <$> xs) → free f a
 
-  _<‥*‥>_ : ∀ { n } { f } { xs } { a } → nary xs a → hlist (replicate n f <*> xs) → free f a
+  _<‥*‥>_ : ∀ { n } { f } { xs : vec n Set } { a } → nary xs a → hlist (f <$> xs) → free f a
   _<‥*‥>_ = mkFree
 
   test : free (vec 3) bool
